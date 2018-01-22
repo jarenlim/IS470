@@ -4,6 +4,7 @@ import functools
 import sets
 import tensorflow as tf
 
+
 def lazy_property(function):
     attribute = '_' + function.__name__
 
@@ -14,6 +15,7 @@ def lazy_property(function):
             setattr(self, attribute, function(self))
         return getattr(self, attribute)
     return wrapper
+
 
 class SequenceLabelling:
 
@@ -29,7 +31,7 @@ class SequenceLabelling:
 
     @lazy_property
     def prediction(self):
-        # Reccurent network.
+        # Recurrent network.
         network = tf.nn.rnn_cell.GRUCell(self._num_hidden)
         network = tf.nn.rnn_cell.DropoutWrapper(
             network, output_keep_prob=self.dropout)
@@ -40,7 +42,7 @@ class SequenceLabelling:
         max_length = int(self.target.get_shape()[1])
         num_classes = int(self.target.get_shape()[2])
         weight, bias = self._weight_and_bias(self._num_hidden, num_classes)
-
+        
         # Flatten to apply same weights to all time steps.
         output = tf.reshape(output, [-1, self._num_hidden])
         prediction = tf.nn.softmax(tf.matmul(output, weight) + bias)
@@ -75,11 +77,12 @@ class SequenceLabelling:
 
 def read_dataset():
     dataset = sets.Ocr()
-    dataset = sets.OneHot(dataset.target, depth=2)(dataset, columns=['taget'])
+    dataset = sets.OneHot(dataset.target, depth=2)(dataset, columns=['target'])
     dataset['data'] = dataset.data.reshape(
-        dataset.data.shape[:2] + (-1,)).astype(float)
+        dataset.data.shape[:-2] + (-1,)).astype(float)
     train, test = sets.Split(0.66)(dataset)
     return train, test
+
 
 if __name__ == '__main__':
     train, test = read_dataset()
@@ -90,7 +93,6 @@ if __name__ == '__main__':
     dropout = tf.placeholder(tf.float32)
     model = SequenceLabelling(data, target, dropout)
     sess = tf.Session()
-
     sess.run(tf.initialize_all_variables())
     for epoch in range(10):
         for _ in range(100):
@@ -100,4 +102,3 @@ if __name__ == '__main__':
         error = sess.run(model.error, {
             data: test.data, target: test.target, dropout: 1})
         print('Epoch {:2d} error {:3.1f}%'.format(epoch + 1, 100 * error))
-        
