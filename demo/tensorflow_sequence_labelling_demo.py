@@ -32,7 +32,7 @@ class SequenceLabelling:
     @lazy_property
     def prediction(self):
         # Recurrent network.
-        network = tf.nn.rnn_cell.GRUCell(self._num_hidden)
+        network = tf.nn.rnn_cell.LSTMCell(self._num_hidden)
         network = tf.nn.rnn_cell.DropoutWrapper(
             network, output_keep_prob=self.dropout)
         network = tf.nn.rnn_cell.MultiRNNCell([network] * self._num_layers)
